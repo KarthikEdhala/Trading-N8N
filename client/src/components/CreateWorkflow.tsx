@@ -7,13 +7,18 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { TriggerSheet } from "./TriggerSheet";
-import { Timer } from "../nodes/triggers/Timer";
-import { PriceTrigger } from "../nodes/triggers/PriceTrigger";
+import { Timer, type TimerNodeMetadata } from "../nodes/triggers/Timer";
+import {
+  PriceTrigger,
+  type PriceTriggerNodeMetadata,
+} from "../nodes/triggers/PriceTrigger";
+import type { TradingMetadata } from "@/nodes/actions/Lighter";
+import { ActionSheet } from "./ActionSheet";
 
 export type NodeKind =
   | "price-trigger"
   | "timer"
-  | "hyperlink"
+  | "hyperliquid"
   | "backpack"
   | "lighter";
 
@@ -31,7 +36,10 @@ const nodeTypes = {
   timer: Timer,
 };
 
-export type NodeMetadata = any;
+export type NodeMetadata =
+  | TradingMetadata
+  | TimerNodeMetadata
+  | PriceTriggerNodeMetadata;
 
 interface Edge {
   id: string;
@@ -42,6 +50,13 @@ interface Edge {
 export default function CreateWorkflow() {
   const [nodes, setNodes] = useState<NodeType[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
+  const [selectAction, setSelectAction] = useState<{
+    position: {
+      x: number;
+      y: number;
+    };
+    startingNodeId: string;
+  } | null>(null);
 
   const onNodesChange = useCallback(
     (changes: any) =>
@@ -60,13 +75,18 @@ export default function CreateWorkflow() {
   );
 
   const onConnectEnd = useCallback((params, connectionInfo) => {
-    console.log(connectionInfo);
-    console.log(params);
+    if (!connectionInfo.isValid) {
+      setSelectAction({
+        position: connectionInfo.to,
+        startingNodeId: connectionInfo.from,
+      });
+      console.log(connectionInfo.from);
+      console.log(connectionInfo.to);
+    }
   }, []);
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      {JSON.stringify(nodes)}
       {!nodes.length && (
         <TriggerSheet
           onSelect={(type, metadata) => {
@@ -80,6 +100,33 @@ export default function CreateWorkflow() {
                   kind: "trigger",
                   metadata,
                 },
+              },
+            ]);
+          }}
+        />
+      )}
+      {selectAction && (
+        <ActionSheet
+          onSelect={(type, metadata) => {
+            const NodeId = Math.random().toString();
+            setNodes([
+              ...nodes,
+              {
+                type,
+                id: NodeId,
+                position: selectAction.position,
+                data: {
+                  kind: "action",
+                  metadata,
+                },
+              },
+            ]);
+            setEdges([
+              ...edges,
+              {
+                source: selectAction.startingNodeId,
+                target: NodeId,
+                id: `{selectAction.startingNodeId}-${NodeId}`,
               },
             ]);
           }}

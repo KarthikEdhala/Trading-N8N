@@ -34,7 +34,7 @@ const SUPPORTED_TRIGGERS = [
   },
 ];
 
-const SUPPORTED_ASSETS = ["SOL", "BTC", "ETH"];
+export const SUPPORTED_ASSETS = ["SOL", "BTC", "ETH"];
 
 export const TriggerSheet = ({
   onSelect,
